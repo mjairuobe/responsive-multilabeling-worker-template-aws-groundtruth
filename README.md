@@ -54,8 +54,8 @@ Quellen: AWS-Doku zu Crowd HTML Elements, `crowd-classifier-multi-select`,
 
 | Kriterium | Umsetzung |
 |---|---|
-| **Kein Scrollen zum Labeln/Absenden** | Vollbild-Flex-Layout (`100dvh`): kompakter Header oben, Labels + **sticky Footer** mit „Absenden“/„Überspringen“ immer sichtbar. |
-| **Textdatensatz passt i. d. R. auf den Screen; sonst Container scrollbar, während Labels/Buttons sichtbar bleiben** | Nur die Text-Region (`.doc`) scrollt (`flex:1; min-height:0; overflow:auto`). Labels und Footer bleiben fix sichtbar. |
+| **Kein Scrollen zum Labeln/Absenden** | **Standalone-PWA:** echtes Vollbild-Layout (`100dvh`), Labels + sticky Footer immer sichtbar. **GT-Template:** Ground Truth bettet das Template in einen **content-getriebenen iframe** ein – ein `100vh`-Vollbild-Layout würde dort kollabieren (leere UI). Daher kompaktes Flow-Layout mit begrenzt scrollbarem Text + `position: sticky` Footer, sodass „Absenden“ sichtbar bleibt. |
+| **Textdatensatz passt i. d. R. auf den Screen; sonst Container scrollbar, während Labels/Buttons sichtbar bleiben** | Text-Region (`.doc`) mit begrenzter Höhe (`max-height`, per JS an echten Viewport skaliert) und eigenem Scroll; Labels und sticky Footer bleiben sichtbar. |
 | **Smartphone-tauglich** | Mobile-first, `dvh` (kein URL-Bar-Springen), `env(safe-area-inset-*)` (Notch), Touch-Targets ≥ 44px, `viewport-fit=cover`. |
 | **PWA-Support später** | Standalone-Variante mit `manifest.webmanifest` + Service Worker + Icons (siehe Abschnitt 4). |
 | **Augenschonende, eher weiße Farben** | Helle Palette (Weiß/sehr helles Grau), entsättigtes Teal-Blau als Akzent, geringer Glanz; optionaler Dark-Mode via `prefers-color-scheme`. |
