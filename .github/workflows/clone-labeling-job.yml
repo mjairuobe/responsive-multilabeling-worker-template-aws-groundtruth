@@ -49,6 +49,42 @@ jobs:
             --region "$AWS_REGION" > src.json
           echo "ROLE_ARN=$(jq -r '.RoleArn' src.json)" >> "$GITHUB_ENV"
 
+          # ---- Debugging-Grundlage: zeigt, welche Felder der Job liefert ----
+          echo "::group::Quell-Job: Kern-Konfiguration"
+          jq '{
+            LabelAttributeName,
+            InputConfig,
+            OutputPath: .OutputConfig.S3OutputPath,
+            LabelCategoryConfigS3Uri,
+            PreHumanTaskLambdaArn: .HumanTaskConfig.PreHumanTaskLambdaArn,
+            UiConfig: .HumanTaskConfig.UiConfig,
+            AnnotationConsolidationLambdaArn: .HumanTaskConfig.AnnotationConsolidationConfig.AnnotationConsolidationLambdaArn
+          }' src.json
+          echo "::endgroup::"
+
+          MANIFEST=$(jq -r '.InputConfig.DataSource.S3DataSource.ManifestS3Uri // empty' src.json)
+          if [ -n "$MANIFEST" ]; then
+            echo "::group::Manifest – erste Zeile ($MANIFEST)"
+            echo "WICHTIG: Welche Schlüssel hier stehen, muss zum Template passen"
+            echo "(Template erwartet: taskObject bzw. source = Text, labels = Array)."
+            aws s3 cp "$MANIFEST" - --region "$AWS_REGION" 2>/dev/null | head -1 | jq . \
+              || echo "(Manifest konnte nicht gelesen/geparst werden)"
+            echo "::endgroup::"
+          else
+            echo "Kein ManifestS3Uri (evtl. Streaming-Job mit SnsDataSource)."
+          fi
+
+          LCC=$(jq -r '.LabelCategoryConfigS3Uri // empty' src.json)
+          if [ -n "$LCC" ]; then
+            echo "::group::Label-Category-Config ($LCC)"
+            echo "Falls die Labels HIER stehen (nicht im Manifest), erklärt das die Demo-Labels."
+            aws s3 cp "$LCC" - --region "$AWS_REGION" 2>/dev/null | jq . \
+              || echo "(Label-Config konnte nicht gelesen werden)"
+            echo "::endgroup::"
+          else
+            echo "Keine LabelCategoryConfigS3Uri am Job gesetzt."
+          fi
+
       - name: Render & validate UI template
         run: |
           TASK_INPUT='{"taskObject":"😀 Tolles Produkt, aber der Versand war langsam. Der Support war sehr hilfsbereit.","labels":["Freude","Wut","Trauer","Überraschung","Frage","Beschwerde","Lob"],"preLabels":["Freude","Lob"]}'
