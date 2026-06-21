@@ -386,7 +386,19 @@
   // Many jobs (e.g. cloned ones) carry the text in `source` but define the
   // label set in the worker template itself. Put that label set here.
   // task.input.labels (from the manifest) OVERRIDES this list when present.
-  var DEFAULT_LABELS = [];
+  var DEFAULT_LABELS = [
+    "isInvitation",
+    "isEco",
+    "isHippie",
+    "isLeftist",
+    "isQueer",
+    "isADHD",
+    "hasDirectQuotes",
+    "hasIndirectQuotes",
+    "isRightWing",
+    "isClimate",
+    "isSpontanousTickerReport"
+  ];
 
   var labelsFromManifest = labels.length > 0;
   if (!labelsFromManifest && DEFAULT_LABELS.length > 0) {
