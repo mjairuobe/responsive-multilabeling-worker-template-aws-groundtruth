@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#11151a" media="(prefers-color-scheme: dark)" />
+  <meta name="description" content="Responsives Multi-Label Text-Annotationstool (Standalone / PWA) – kompatibel zum AWS Ground Truth Worker Template." />
+  <title>Multi-Label Text Annotation</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app__header">
+      <div>
+        <h1 class="app__title" id="title">Wähle alle zutreffenden Labels</h1>
+        <p class="app__subtitle">Mehrfachauswahl möglich</p>
+      </div>
+      <button type="button" class="info-btn" id="infoBtn" aria-label="Anleitung anzeigen" title="Anleitung">i</button>
+    </header>
+
+    <main class="doc" id="docRegion">
+      <div class="doc__card">
+        <p class="doc__text" id="docText"></p>
+      </div>
+    </main>
+
+    <section class="labels" aria-label="Labels">
+      <div class="labels__legend" id="labelsLegend">Labels</div>
+      <fieldset class="chips" id="chips"></fieldset>
+    </section>
+
+    <div class="error" id="error" role="alert" aria-live="assertive"></div>
+
+    <footer class="app__footer">
+      <span class="count" id="count" aria-live="polite">0 ausgewählt</span>
+      <button type="button" class="btn" id="skipBtn">Überspringen</button>
+      <button type="button" class="btn btn--primary" id="submitBtn">Absenden</button>
+    </footer>
+  </div>
+
+  <dialog class="instructions" id="instructionsDialog">
+    <div class="instructions__body">
+      <h2>Anleitung</h2>
+      <ol>
+        <li>Lies den Text aufmerksam.</li>
+        <li>Wähle <strong>alle</strong> zutreffenden Labels aus (Mehrfachauswahl).</li>
+        <li>Trifft nichts zu, wähle „Keine zutreffend“.</li>
+        <li>Tippe auf <strong>Absenden</strong>. Tastatur: Enter zum Absenden.</li>
+      </ol>
+      <p style="color:var(--text-muted);font-size:0.85rem;">
+        Vorausgewählte Labels stammen aus einem automatischen Vorschlag (LLM/Classifier) – bitte prüfen.
+      </p>
+    </div>
+    <button type="button" class="btn instructions__close" id="closeInfo">Schließen</button>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
