@@ -304,7 +304,7 @@
     <!-- Only this region scrolls when the text is long -->
     <main class="doc" id="docRegion">
       <div class="doc__card">
-        <p class="doc__text" id="docText">{{ task.input.taskObject }}</p>
+        <p class="doc__text" id="docText">{{ task.input.taskObject | default: task.input.source }}</p>
       </div>
     </main>
 
@@ -382,8 +382,11 @@
   if (!Array.isArray(labels)) labels = [];
   if (!Array.isArray(preLabels)) preLabels = [];
 
-  // Fallback demo labels if the manifest provided none (e.g. console preview misconfig)
-  if (labels.length === 0) {
+  // If the manifest provided no labels (task.input.labels missing/empty), make
+  // that VISIBLE instead of silently showing demo labels - this is the common
+  // cause of "wrong labels" when a job's manifest does not match this template.
+  var usedFallbackLabels = labels.length === 0;
+  if (usedFallbackLabels) {
     labels = ["Positiv", "Negativ", "Neutral", "Frage", "Beschwerde"];
   }
 
@@ -461,7 +464,10 @@
   exclusionInput = exC.input;
   chips.appendChild(exC.wrap);
 
-  legend.textContent = labels.length + " Labels – Mehrfachauswahl";
+  legend.textContent = usedFallbackLabels
+    ? "⚠ Keine Labels in task.input.labels übergeben – Demo-Labels werden angezeigt"
+    : labels.length + " Labels – Mehrfachauswahl";
+  if (usedFallbackLabels) legend.style.color = "var(--danger)";
 
   function clearNormalLabels() {
     normalInputs.forEach(function (i) {
@@ -558,6 +564,13 @@
   }
   window.addEventListener("resize", sizeDoc);
   sizeDoc();
+
+  // Make a missing dataset obvious (text neither in taskObject nor source).
+  var dt = document.getElementById("docText");
+  if (dt && !dt.textContent.trim()) {
+    dt.textContent = "⚠ Kein Text übergeben (task.input.taskObject bzw. source ist leer).";
+    dt.style.color = "var(--danger)";
+  }
 
   updateCount();
 })();
