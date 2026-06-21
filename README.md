@@ -13,6 +13,7 @@ augenschonend, und vorbereitet für **PWA** und **LLM/Classifier-Pre-Labeling**.
 | `template.multiselect.liquid.html` | Variante mit dem **nativen** `crowd-classifier-multi-select`-Element (Standard-GT-Output-Format). |
 | `standalone/` | **PWA-fähige** Standalone-Web-App (gleiches UI) zum Entwickeln/Vorschauen und für spätere Eigenhostung inkl. direkter LLM-Anbindung. |
 | `examples/input.manifest.jsonl` | Beispiel-Input-Manifest für einen Custom-Labeling-Job. |
+| `.github/workflows/deploy.yml` | CI/CD: Deployt Templates + Standalone-PWA nach AWS S3 (GitHub OIDC, keine statischen Keys). Setup: siehe `docs/deployment.md`. |
 
 ---
 
@@ -181,3 +182,13 @@ Pre-Labeling im UI, kann aber kombiniert werden.
 - **Farben**: zentral über CSS-Variablen (`:root`).
 - **Pflichtauswahl**: `REQUIRE_SELECTION` (Template) bzw.
   `CONFIG.requireSelection` (Standalone).
+
+---
+
+## 7. Deployment (GitHub Actions → AWS)
+
+Automatisches Deployment per **GitHub OIDC** (ohne statische AWS-Keys):
+`.github/workflows/deploy.yml` lädt bei jedem Push auf `main` die
+Ground-Truth-Templates und die Standalone-PWA nach S3. Die einmalige
+Einrichtung (Permission-Policy, Buckets, GitHub-Variablen) ist in
+[`docs/deployment.md`](docs/deployment.md) beschrieben.

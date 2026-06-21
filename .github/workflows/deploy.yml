@@ -1,0 +1,74 @@
+name: Deploy to AWS
+
+# Deployt den Repo-Inhalt nach AWS:
+#   - Ground-Truth-Templates  -> s3://$TEMPLATE_BUCKET/templates/
+#   - Standalone-PWA           -> s3://$PWA_BUCKET/
+#
+# Authentifizierung via GitHub OIDC (keine statischen AWS-Keys).
+# Die IAM-Rolle (vars.AWS_ROLE_ARN) muss dem OIDC-Provider vertrauen und auf
+# refs/heads/main eingeschränkt sein (siehe docs/deployment.md).
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:        # manuelles Auslösen über die Actions-UI
+
+permissions:
+  id-token: write           # erforderlich, damit GitHub ein OIDC-Token ausstellt
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod        # optional: in GitHub mit "Required reviewers" absichern
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify identity
+        run: aws sts get-caller-identity
+
+      - name: Upload Ground Truth worker templates
+        run: |
+          aws s3 cp template.liquid.html \
+            "s3://${{ vars.TEMPLATE_BUCKET }}/templates/template.liquid.html" \
+            --content-type "text/html; charset=utf-8"
+          aws s3 cp template.multiselect.liquid.html \
+            "s3://${{ vars.TEMPLATE_BUCKET }}/templates/template.multiselect.liquid.html" \
+            --content-type "text/html; charset=utf-8"
+
+      - name: Deploy standalone PWA
+        run: |
+          # Statische Assets lange cachen ...
+          aws s3 sync standalone/ "s3://${{ vars.PWA_BUCKET }}/" \
+            --delete \
+            --exclude "service-worker.js" \
+            --exclude "manifest.webmanifest" \
+            --exclude "index.html" \
+            --cache-control "public,max-age=31536000,immutable"
+          # ... aber Einstiegspunkte/SW nie aggressiv cachen, sonst keine Updates beim Client
+          aws s3 cp standalone/index.html "s3://${{ vars.PWA_BUCKET }}/index.html" \
+            --content-type "text/html; charset=utf-8" --cache-control "no-cache"
+          aws s3 cp standalone/manifest.webmanifest "s3://${{ vars.PWA_BUCKET }}/manifest.webmanifest" \
+            --content-type "application/manifest+json" --cache-control "no-cache"
+          aws s3 cp standalone/service-worker.js "s3://${{ vars.PWA_BUCKET }}/service-worker.js" \
+            --content-type "application/javascript; charset=utf-8" --cache-control "no-cache"
+
+      # Optional: CloudFront-Cache invalidieren (Variable CLOUDFRONT_DISTRIBUTION_ID setzen
+      # und cloudfront:CreateInvalidation in der Permission-Policy erlauben).
+      - name: Invalidate CloudFront
+        if: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
