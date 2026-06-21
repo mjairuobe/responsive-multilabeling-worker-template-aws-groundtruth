@@ -17,9 +17,9 @@ on:
         required: true
         default: "EmojiDynamics"
       create_job:
-        description: "Klon-Job wirklich erstellen? (false = nur UI-Vorschau)"
+        description: "Klon-Job erstellen? (Default false = nur UI-Vorschau; true erzeugt einen Job und verbraucht Kontingent, Limit i.d.R. 5)"
         type: boolean
-        default: true
+        default: false
 
 permissions:
   id-token: write
