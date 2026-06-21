@@ -67,8 +67,11 @@ aws s3 mb s3://<PWA_BUCKET> --region <REGION>
 
 ## 3. GitHub-Variablen setzen
 
-Repo → **Settings → Secrets and variables → Actions → Variables** (keine Secrets
-nötig, da OIDC):
+**Variables, keine Secrets** – da OIDC genutzt wird, gibt es keine geheimen
+Zugangsdaten. Rollen-ARN, Region und Bucket-Namen sind nicht vertraulich.
+
+Repo → **Settings → Secrets and variables → Actions → Tab „Variables“** →
+„New repository variable“:
 
 | Variable | Beispiel |
 |---|---|
@@ -77,6 +80,24 @@ nötig, da OIDC):
 | `TEMPLATE_BUCKET` | `mein-gt-templates` |
 | `PWA_BUCKET` | `mein-annotate-pwa` |
 | `CLOUDFRONT_DISTRIBUTION_ID` | *(optional)* `E123ABC...` |
+
+### Brauche ich eine GitHub Environment?
+
+**Nein, standardmäßig nicht.** Der Workflow nutzt **Repository-Variablen** und
+läuft auf `main` – das passt zur Trust Policy (`...:ref:refs/heads/main`).
+
+Wichtig: Sobald ein Job `environment: <name>` referenziert, ändert GitHub den
+OIDC-`sub`-Claim zu `repo:OWNER/REPO:environment:<name>` (statt `:ref:...`).
+Wer eine Environment (z. B. mit *Required reviewers*) nutzen will, muss daher:
+
+1. unter **Settings → Environments** die Environment anlegen (z. B. `prod`),
+2. im Workflow `environment: prod` zum Job hinzufügen,
+3. **die Trust Policy umstellen** auf:
+   ```
+   "token.actions.githubusercontent.com:sub": "repo:mjairuobe/responsive-multilabeling-worker-template-aws-groundtruth:environment:prod"
+   ```
+Variablen können dann optional auch pro Environment definiert werden (überschreiben
+gleichnamige Repository-Variablen).
 
 ## 4. Deployen
 

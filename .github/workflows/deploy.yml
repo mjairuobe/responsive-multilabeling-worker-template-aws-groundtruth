@@ -24,7 +24,11 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: prod        # optional: in GitHub mit "Required reviewers" absichern
+    # Kein `environment:` hier! Sonst wird der OIDC-sub-Claim zu
+    #   repo:OWNER/REPO:environment:<name>
+    # und passt nicht mehr zur Trust Policy (die auf :ref:refs/heads/main filtert).
+    # Willst du eine Environment mit Required Reviewers nutzen, siehe docs/deployment.md
+    # (dann muss die Trust Policy auf :environment:<name> umgestellt werden).
     steps:
       - name: Checkout
         uses: actions/checkout@v4
