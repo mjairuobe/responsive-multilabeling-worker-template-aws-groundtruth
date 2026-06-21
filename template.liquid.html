@@ -382,9 +382,19 @@
   if (!Array.isArray(labels)) labels = [];
   if (!Array.isArray(preLabels)) preLabels = [];
 
-  // If the manifest provided no labels (task.input.labels missing/empty), make
-  // that VISIBLE instead of silently showing demo labels - this is the common
-  // cause of "wrong labels" when a job's manifest does not match this template.
+  // === Configure your labels here when the manifest has no `labels` field ===
+  // Many jobs (e.g. cloned ones) carry the text in `source` but define the
+  // label set in the worker template itself. Put that label set here.
+  // task.input.labels (from the manifest) OVERRIDES this list when present.
+  var DEFAULT_LABELS = [];
+
+  var labelsFromManifest = labels.length > 0;
+  if (!labelsFromManifest && DEFAULT_LABELS.length > 0) {
+    labels = DEFAULT_LABELS.slice();
+  }
+
+  // Only if NOTHING is configured anywhere: show demo labels + a visible warning,
+  // so a manifest/template mismatch is obvious instead of silent.
   var usedFallbackLabels = labels.length === 0;
   if (usedFallbackLabels) {
     labels = ["Positiv", "Negativ", "Neutral", "Frage", "Beschwerde"];

@@ -85,6 +85,18 @@ jobs:
             echo "Keine LabelCategoryConfigS3Uri am Job gesetzt."
           fi
 
+          # If labels are neither in the manifest nor a label config, the ORIGINAL
+          # worker template usually hardcoded them. Dump it so we can copy them.
+          ORIG_TPL=$(jq -r '.HumanTaskConfig.UiConfig.UiTemplateS3Uri // empty' src.json)
+          if [ -n "$ORIG_TPL" ]; then
+            echo "::group::Original-Worker-Template ($ORIG_TPL) – Labelsuche"
+            aws s3 cp "$ORIG_TPL" - --region "$AWS_REGION" 2>/dev/null > orig_template.txt \
+              && { echo "--- Treffer (categories / labels / crowd-classifier / checkbox / value) ---";
+                   grep -inE "categories|labels|crowd-classifier|crowd-checkbox|chip__label|name=|value=" orig_template.txt | head -60; } \
+              || echo "(Original-Template nicht lesbar)"
+            echo "::endgroup::"
+          fi
+
       - name: Render & validate UI template
         run: |
           TASK_INPUT='{"taskObject":"😀 Tolles Produkt, aber der Versand war langsam. Der Support war sehr hilfsbereit.","labels":["Freude","Wut","Trauer","Überraschung","Frage","Beschwerde","Lob"],"preLabels":["Freude","Lob"]}'
