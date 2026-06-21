@@ -352,10 +352,12 @@
   var EXCLUSION_LABEL = "Keine zutreffend";
   var REQUIRE_SELECTION = true; // at least one label (or exclusion) must be chosen
 
-  // Ground Truth HTML-escapes {{ ... | to_json }} output (e.g. " -> &quot;).
-  // Inside a <script> element the browser does NOT decode HTML entities, so we
-  // must decode them before JSON.parse, otherwise parsing fails and we lose the
-  // real labels/preLabels. Safe no-op when there is nothing to decode.
+  // Ground Truth HTML-escapes the to_json output (a double quote becomes the
+  // &quot; entity). Inside a <script> element the browser does NOT decode HTML
+  // entities, so we must decode them before JSON.parse, otherwise parsing fails
+  // and we lose the real labels/preLabels. Safe no-op when nothing is escaped.
+  // (Note: never write Liquid-like braces in comments here -- GT would try to
+  // evaluate them and the whole template would fail to render.)
   function decodeEntities(s) {
     if (!s || s.indexOf("&") === -1) return s;
     var ta = document.createElement("textarea");

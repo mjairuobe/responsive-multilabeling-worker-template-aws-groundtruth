@@ -42,6 +42,27 @@ jobs:
       - name: Verify identity
         run: aws sts get-caller-identity
 
+      # Validate the template with Ground Truth's own renderer BEFORE uploading.
+      # Catches Liquid/crowd errors (e.g. stray braces in comments) so a broken
+      # template never reaches S3. Does NOT create any labeling job.
+      - name: Render & validate UI template
+        env:
+          RENDER_ROLE_ARN: ${{ vars.SAGEMAKER_EXECUTION_ROLE_ARN || 'arn:aws:iam::423623826655:role/service-role/AmazonSageMaker-ExecutionRole-20260621T183838' }}
+        run: |
+          TASK_INPUT='{"taskObject":"😀 Tolles Produkt, aber der Versand war langsam. Der Support war sehr hilfsbereit.","labels":["Freude","Wut","Trauer","Überraschung","Frage","Beschwerde","Lob"],"preLabels":["Freude","Lob"]}'
+          for f in template.liquid.html template.multiselect.liquid.html; do
+            echo "::group::render $f"
+            jq -n --rawfile c "$f" --arg role "$RENDER_ROLE_ARN" --arg input "$TASK_INPUT" \
+              '{UiTemplate:{Content:$c}, Task:{Input:$input}, RoleArn:$role}' > render.json
+            aws sagemaker render-ui-template --cli-input-json file://render.json --region "${{ vars.AWS_REGION }}" > render-out.json
+            ERRS=$(jq '.Errors | length' render-out.json)
+            if [ "$ERRS" != "0" ]; then
+              echo "::error::render-ui-template meldet Fehler in $f:"; jq '.Errors' render-out.json; exit 1
+            fi
+            echo "$f: OK ($(jq -r '.RenderedContent' render-out.json | wc -c) Bytes, keine Fehler)"
+            echo "::endgroup::"
+          done
+
       - name: Upload Ground Truth worker templates
         run: |
           aws s3 cp template.liquid.html \
