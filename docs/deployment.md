@@ -116,3 +116,63 @@ workflow** gestartet werden.
 - Templates im Bucket prüfen und in Ground Truth als `UiTemplateS3Uri`
   hinterlegen.
 - PWA-URL (CloudFront/S3) im Browser öffnen.
+
+## 6. Workflow „Clone Labeling Job + UI Preview“
+
+Der Workflow `.github/workflows/clone-labeling-job.yml` ist **manuell**
+auslösbar (Actions → *Clone Labeling Job + UI Preview* → *Run workflow*, Branch
+`main`). Er:
+
+1. liest einen bestehenden Job aus (`describe-labeling-job`),
+2. rendert das Template mit Beispiel-Daten (`render-ui-template`), lädt die
+   Vorschau als Artifact hoch **und** erzeugt eine **presigned Test-URL**
+   (≈1 Std. gültig) in der Job-Summary,
+3. erstellt optional einen **Klon** des Jobs, bei dem nur die `UiTemplateS3Uri`
+   auf das deployte Template umgestellt wird (Eingabedaten/Worker/Lambdas wie im
+   Original).
+
+### Zusätzliche IAM-Berechtigungen (Pflicht für diesen Workflow)
+
+Die Deploy-Rolle braucht zusätzlich zu den S3-Rechten diese **Identity-Policy**:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GroundTruthCloneAndPreview",
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:DescribeLabelingJob",
+        "sagemaker:CreateLabelingJob",
+        "sagemaker:RenderUiTemplate",
+        "sagemaker:DescribeWorkteam"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PassExecutionRoleToSageMaker",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::423623826655:role/<SAGEMAKER_EXECUTION_ROLE_VON_EMOJIDYNAMICS>",
+      "Condition": { "StringEquals": { "iam:PassedToService": "sagemaker.amazonaws.com" } }
+    }
+  ]
+}
+```
+
+Hinweise:
+- `<SAGEMAKER_EXECUTION_ROLE_VON_EMOJIDYNAMICS>` ist die `RoleArn` des Quell-Jobs
+  (mit `aws sagemaker describe-labeling-job --labeling-job-name EmojiDynamics
+  --query RoleArn` herausfinden). `iam:PassRole` ist nötig, weil
+  `create-labeling-job` diese Execution-Rolle an SageMaker übergibt.
+- Diese **Execution-Rolle** (nicht die Deploy-Rolle) muss ihrerseits
+  `s3:GetObject` auf `templatesaws1312161` haben, damit Ground Truth das Template
+  lesen kann.
+- Greift nur, wenn die **Permissions Boundary** der Rolle diese Aktionen
+  ebenfalls zulässt (mit `Allow: *` in der Boundary erfüllt).
+
+### Einschränkung
+Der Klon funktioniert am besten, wenn der Quell-Job ein **Custom-Job** ist. Bei
+einem Built-in-Tasktyp passen die (AWS-managed) Pre-/Post-Lambdas ggf. nicht zum
+Datenformat dieses Templates (`task.input.taskObject` / `labels`).

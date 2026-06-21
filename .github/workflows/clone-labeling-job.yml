@@ -1,0 +1,112 @@
+name: Clone Labeling Job + UI Preview
+
+# Manuell auslösbar (Actions -> "Clone Labeling Job + UI Preview" -> Run workflow).
+# 1. Liest einen bestehenden Labeling-Job aus (describe-labeling-job).
+# 2. Rendert das Template mit Beispiel-Daten (render-ui-template) und stellt eine
+#    presigned Test-URL bereit (~1 Std. gültig) + lädt die Vorschau als Artifact hoch.
+# 3. Erstellt optional einen Klon des Jobs, der NUR die UiTemplateS3Uri auf das
+#    deployte Template umstellt (gleiche Eingabedaten/Worker/Lambdas wie das Original).
+#
+# Muss auf "main" laufen, weil die OIDC-Trust-Policy auf refs/heads/main eingeschränkt ist.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_job_name:
+        description: "Name des Quell-Labeling-Jobs zum Klonen"
+        required: true
+        default: "EmojiDynamics"
+      create_job:
+        description: "Klon-Job wirklich erstellen? (false = nur UI-Vorschau)"
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  TEMPLATE_S3_URI: s3://templatesaws1312161/templates/template.liquid.html
+
+jobs:
+  clone-and-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read source job config
+        run: |
+          aws sagemaker describe-labeling-job \
+            --labeling-job-name "${{ inputs.source_job_name }}" \
+            --region "$AWS_REGION" > src.json
+          echo "ROLE_ARN=$(jq -r '.RoleArn' src.json)" >> "$GITHUB_ENV"
+
+      - name: Render & validate UI template
+        run: |
+          TASK_INPUT='{"taskObject":"😀 Tolles Produkt, aber der Versand war langsam. Der Support war sehr hilfsbereit.","labels":["Freude","Wut","Trauer","Überraschung","Frage","Beschwerde","Lob"],"preLabels":["Freude","Lob"]}'
+          jq -n --rawfile c template.liquid.html --arg role "$ROLE_ARN" --arg input "$TASK_INPUT" \
+            '{UiTemplate:{Content:$c}, Task:{Input:$input}, RoleArn:$role}' > render.json
+          aws sagemaker render-ui-template --cli-input-json file://render.json --region "$AWS_REGION" > render-out.json
+          ERRS=$(jq '.Errors | length' render-out.json)
+          if [ "$ERRS" != "0" ]; then
+            echo "::error::render-ui-template meldet Fehler im Template:"
+            jq '.Errors' render-out.json
+            exit 1
+          fi
+          jq -r '.RenderedContent' render-out.json > rendered.html
+          echo "Template gerendert: $(wc -c < rendered.html) Bytes, keine Fehler."
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-preview
+          path: rendered.html
+
+      - name: Publish preview to S3 + presigned test URL
+        run: |
+          KEY="preview/rendered-${GITHUB_SHA}.html"
+          aws s3 cp rendered.html "s3://${{ vars.PWA_BUCKET }}/$KEY" \
+            --content-type "text/html; charset=utf-8" --region "$AWS_REGION"
+          URL=$(aws s3 presign "s3://${{ vars.PWA_BUCKET }}/$KEY" --expires-in 3600 --region "$AWS_REGION")
+          {
+            echo "## UI Test-URL (≈1 Std. gültig)"
+            echo ""
+            echo "[Vorschau im Browser öffnen]($URL)"
+            echo ""
+            echo "_Alternativ: Artifact \`ui-preview\` herunterladen und lokal öffnen._"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL"
+
+      - name: Create cloned labeling job
+        if: ${{ inputs.create_job }}
+        run: |
+          NEW_NAME="${{ inputs.source_job_name }}-clone-${GITHUB_RUN_NUMBER}"
+          jq --arg name "$NEW_NAME" --arg uitpl "$TEMPLATE_S3_URI" '
+            {
+              LabelingJobName: $name,
+              LabelAttributeName: .LabelAttributeName,
+              InputConfig: .InputConfig,
+              OutputConfig: .OutputConfig,
+              RoleArn: .RoleArn,
+              HumanTaskConfig: (.HumanTaskConfig | .UiConfig = {UiTemplateS3Uri: $uitpl})
+            }
+            + (if .LabelCategoryConfigS3Uri then {LabelCategoryConfigS3Uri: .LabelCategoryConfigS3Uri} else {} end)
+            + (if .StoppingConditions then {StoppingConditions: .StoppingConditions} else {} end)
+            + (if .LabelingJobAlgorithmsConfig then {LabelingJobAlgorithmsConfig: .LabelingJobAlgorithmsConfig} else {} end)
+          ' src.json > create.json
+          aws sagemaker create-labeling-job --cli-input-json file://create.json --region "$AWS_REGION"
+          echo "## Klon-Job erstellt: \`$NEW_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+          WT_NAME="$(jq -r '.HumanTaskConfig.WorkteamArn' src.json | sed 's#.*/##')"
+          PORTAL=$(aws sagemaker describe-workteam --workteam-name "$WT_NAME" \
+            --region "$AWS_REGION" --query 'Workteam.SubDomain' --output text 2>/dev/null || true)
+          if [ -n "$PORTAL" ] && [ "$PORTAL" != "None" ]; then
+            echo "Worker-Portal: https://$PORTAL" >> "$GITHUB_STEP_SUMMARY"
+          fi
