@@ -92,10 +92,18 @@
 <script>
 (function () {
   "use strict";
+  // Ground Truth HTML-escapes {{ ... | to_json }} (e.g. " -> &quot;); decode
+  // before JSON.parse, since entities are not decoded inside <script>.
+  function decodeEntities(s) {
+    if (!s || s.indexOf("&") === -1) return s;
+    var ta = document.createElement("textarea");
+    ta.innerHTML = s;
+    return ta.value;
+  }
   function parseJSON(id, fb) {
     var el = document.getElementById(id);
     if (!el) return fb;
-    try { var v = JSON.parse(el.textContent.trim() || "null"); return v == null ? fb : v; }
+    try { var v = JSON.parse(decodeEntities((el.textContent || "").trim()) || "null"); return v == null ? fb : v; }
     catch (e) { return fb; }
   }
   var preLabels = parseJSON("gt-prelabels", []);

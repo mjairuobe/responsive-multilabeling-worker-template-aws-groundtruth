@@ -352,11 +352,23 @@
   var EXCLUSION_LABEL = "Keine zutreffend";
   var REQUIRE_SELECTION = true; // at least one label (or exclusion) must be chosen
 
+  // Ground Truth HTML-escapes {{ ... | to_json }} output (e.g. " -> &quot;).
+  // Inside a <script> element the browser does NOT decode HTML entities, so we
+  // must decode them before JSON.parse, otherwise parsing fails and we lose the
+  // real labels/preLabels. Safe no-op when there is nothing to decode.
+  function decodeEntities(s) {
+    if (!s || s.indexOf("&") === -1) return s;
+    var ta = document.createElement("textarea");
+    ta.innerHTML = s;
+    return ta.value;
+  }
+
   function parseJSON(id, fallback) {
     var el = document.getElementById(id);
     if (!el) return fallback;
+    var raw = decodeEntities((el.textContent || "").trim());
     try {
-      var v = JSON.parse(el.textContent.trim() || "null");
+      var v = JSON.parse(raw || "null");
       return v == null ? fallback : v;
     } catch (e) {
       return fallback;
