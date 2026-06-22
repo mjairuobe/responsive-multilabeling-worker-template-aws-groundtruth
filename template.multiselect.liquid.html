@@ -57,6 +57,9 @@
     max-width: 46ch;
     hyphens: auto;
   }
+  @media (max-width: 480px) {
+    classification-target { font-size: 1.375rem; line-height: 1.7; max-width: 30ch; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
   /* Compact, eye-friendly spacing around the widget */
@@ -96,6 +99,15 @@
 <script>
 (function () {
   "use strict";
+
+  // Inject a mobile viewport when the host page/preview lacks one (prevents the
+  // ~980px layout viewport that scales everything down on phones).
+  (function ensureViewport() {
+    var m = document.querySelector('meta[name="viewport"]');
+    if (!m) { m = document.createElement("meta"); m.name = "viewport"; (document.head || document.documentElement).appendChild(m); }
+    m.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+  })();
+
   // Ground Truth HTML-escapes the to_json output (a double quote becomes the
   // &quot; entity); decode before JSON.parse, since entities are not decoded
   // inside <script>. (Do not put Liquid-like braces in comments -- GT would try

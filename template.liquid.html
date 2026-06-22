@@ -289,13 +289,22 @@
     .app__title { font-size: 1.05rem; }
   }
 
-  /* Phones: larger reading text and an even shorter measure (fewer chars/line) */
+  /* Phones: much larger reading text and a short measure (fewer chars/line) */
   @media (max-width: 480px) {
     .doc { padding: 12px 14px; }
     .doc__card { padding: 16px 16px; }
-    .doc__text { font-size: 1.1875rem; line-height: 1.75; max-width: 34ch; }
-    .app__title { font-size: 1rem; }
+    .doc__text { font-size: 1.375rem; line-height: 1.7; max-width: 30ch; }   /* ~22px */
+    .app__title { font-size: 1.0625rem; }
+    .app__subtitle { font-size: 0.85rem; }
     .chips { gap: 8px; }
+    .chip { font-size: 1rem; min-height: 50px; }       /* ~16px, large tap target */
+    .btn { font-size: 1.0625rem; min-height: 52px; }
+    .labels__legend { font-size: 0.85rem; }
+  }
+
+  /* Very small phones */
+  @media (max-width: 360px) {
+    .doc__text { font-size: 1.25rem; max-width: 26ch; }
   }
 
   /* Respect users who prefer reduced motion */
@@ -364,6 +373,19 @@
 <script>
 (function () {
   "use strict";
+
+  // Ensure a mobile viewport even when the host page / preview did not set one.
+  // Without width=device-width, phones use a ~980px layout viewport and scale
+  // the whole UI down (tiny text). This is the main mobile-responsiveness fix.
+  (function ensureViewport() {
+    var m = document.querySelector('meta[name="viewport"]');
+    if (!m) {
+      m = document.createElement("meta");
+      m.name = "viewport";
+      (document.head || document.documentElement).appendChild(m);
+    }
+    m.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+  })();
 
   // ---- Config: an exclusion / "none of the above" category (optional) ----
   var EXCLUSION_LABEL = "Keine zutreffend";
