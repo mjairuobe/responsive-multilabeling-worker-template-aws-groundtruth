@@ -169,7 +169,9 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+    flex: 1 1 auto;             /* behave like flex items: fill the row, adapt to siblings/container */
     padding: 11px 16px;
     min-height: 48px;            /* >=48px touch target (Material) */
     border: 1px solid var(--border);
@@ -179,6 +181,7 @@
     font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.05rem);
     cursor: pointer;
     user-select: none;
+    white-space: nowrap;
     transition: background-color .12s ease, border-color .12s ease;
   }
   .chip:hover { background: var(--surface-2); }
@@ -297,15 +300,16 @@
     .app__title { font-size: 1.0625rem; }
     .app__subtitle { font-size: 0.85rem; }
     .chips { gap: 7px; }
-    .chip { font-size: 0.95rem; min-height: 44px; padding: 8px 13px; }  /* compact but tappable so all labels fit */
+    /* Scale the LABEL itself (font/padding) so more chips fit per row -> fewer rows */
+    .chip { font-size: 0.85rem; min-height: 44px; padding: 8px 12px; }
     .btn { font-size: 1.0625rem; min-height: 50px; }
     .labels__legend { font-size: 0.85rem; margin: 6px 2px; }
   }
 
-  /* Very small phones: shrink chips a touch more so all labels + footer still fit */
+  /* Very small phones: scale chips down a touch more */
   @media (max-width: 360px) {
     .doc__text { font-size: 1.25rem; max-width: 26ch; }
-    .chip { min-height: 42px; padding: 7px 11px; font-size: 0.9rem; }
+    .chip { min-height: 42px; padding: 7px 10px; font-size: 0.8rem; }
     .chips { gap: 6px; }
   }
 

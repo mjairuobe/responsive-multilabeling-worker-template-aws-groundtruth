@@ -98,7 +98,8 @@ html, body {
 .labels__legend { font-size: 0.78rem; color: var(--text-muted); margin: 8px 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; }
 .chip {
-  position: relative; display: inline-flex; align-items: center; gap: 8px;
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  flex: 1 1 auto; white-space: nowrap;
   padding: 11px 16px; min-height: 48px; border: 1px solid var(--border);
   border-radius: 999px; background: var(--surface); color: var(--text);
   font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.05rem); cursor: pointer; user-select: none;
@@ -168,13 +169,13 @@ dialog.instructions::backdrop { background: rgba(0,0,0,0.4); }
   .doc__text { font-size: 1.375rem; line-height: 1.7; max-width: 30ch; }
   .app__title { font-size: 1.0625rem; }
   .chips { gap: 7px; }
-  .chip { font-size: 0.95rem; min-height: 44px; padding: 8px 13px; }
+  .chip { font-size: 0.85rem; min-height: 44px; padding: 8px 12px; }
   .btn { font-size: 1.0625rem; min-height: 50px; }
 }
 
 @media (max-width: 360px) {
   .doc__text { font-size: 1.25rem; max-width: 26ch; }
-  .chip { min-height: 42px; padding: 7px 11px; font-size: 0.9rem; }
+  .chip { min-height: 42px; padding: 7px 10px; font-size: 0.8rem; }
   .chips { gap: 6px; }
 }
 
