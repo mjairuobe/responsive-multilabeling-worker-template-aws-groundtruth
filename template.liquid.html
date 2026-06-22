@@ -123,23 +123,26 @@
   .doc {
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    max-height: 360px;           /* bounded scroll for long texts; JS scales this to ~50% of the viewport when one is available */
-    padding: 14px;
+    max-height: 440px;           /* bounded scroll for long texts; JS scales this to ~55% of the viewport when one is available */
+    padding: 14px 16px;
   }
   .doc__card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px 18px;
+    padding: 18px 20px;
     box-shadow: var(--shadow);
   }
   .doc__text {
     margin: 0;
-    font-size: 1rem;
-    line-height: 1.6;
+    /* Fluid reading text: ~17px on phones up to ~20px on large screens (>=16px floor) */
+    font-size: clamp(1.0625rem, 1rem + 0.7vw, 1.25rem);
+    line-height: 1.7;            /* breathable; helps with long German words */
+    max-width: 46ch;             /* short measure -> fewer characters per line */
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   /* ---------- Labels (chips) ---------- */
@@ -167,13 +170,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
-    min-height: 44px;            /* comfortable touch target */
+    padding: 11px 16px;
+    min-height: 48px;            /* >=48px touch target (Material) */
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface);
     color: var(--text);
-    font-size: 0.92rem;
+    font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.05rem);
     cursor: pointer;
     user-select: none;
     transition: background-color .12s ease, border-color .12s ease;
@@ -245,9 +248,9 @@
     appearance: none;
     border-radius: 10px;
     border: 1px solid var(--border);
-    padding: 12px 18px;
-    min-height: 46px;
-    font-size: 0.95rem;
+    padding: 13px 20px;
+    min-height: 50px;            /* generous primary actions, easy to tap */
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     background: var(--surface);
@@ -284,6 +287,20 @@
 
   @media (min-width: 600px) {
     .app__title { font-size: 1.05rem; }
+  }
+
+  /* Phones: larger reading text and an even shorter measure (fewer chars/line) */
+  @media (max-width: 480px) {
+    .doc { padding: 12px 14px; }
+    .doc__card { padding: 16px 16px; }
+    .doc__text { font-size: 1.1875rem; line-height: 1.75; max-width: 34ch; }
+    .app__title { font-size: 1rem; }
+    .chips { gap: 8px; }
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
   }
 </style>
 
@@ -582,7 +599,7 @@
     var doc = document.getElementById("docRegion");
     if (!doc) return;
     var vh = window.innerHeight || 0;
-    if (vh > 420) doc.style.maxHeight = Math.round(vh * 0.5) + "px";
+    if (vh > 420) doc.style.maxHeight = Math.round(vh * 0.55) + "px";
   }
   window.addEventListener("resize", sizeDoc);
   sizeDoc();

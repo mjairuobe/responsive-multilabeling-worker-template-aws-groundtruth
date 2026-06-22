@@ -46,14 +46,18 @@
 
   classification-target {
     display:block;
-    max-height: 360px;
+    max-height: 440px;
     overflow:auto;
     -webkit-overflow-scrolling:touch;
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap:anywhere;
-    line-height:1.6;
+    font-size: clamp(1.0625rem, 1rem + 0.7vw, 1.25rem);
+    line-height:1.7;
+    max-width: 46ch;
+    hyphens: auto;
   }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
   /* Compact, eye-friendly spacing around the widget */
   .app__pad { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
