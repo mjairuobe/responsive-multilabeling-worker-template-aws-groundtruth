@@ -92,7 +92,7 @@ html, body {
 }
 
 .labels {
-  flex: 0 1 auto; min-height: 0; overflow: auto; max-height: 42dvh;
+  flex: 0 0 auto;              /* show ALL labels at once - no inner scrolling */
   padding: 4px 14px 10px; border-top: 1px solid var(--border);
 }
 .labels__legend { font-size: 0.78rem; color: var(--text-muted); margin: 8px 2px; }
@@ -167,13 +167,15 @@ dialog.instructions::backdrop { background: rgba(0,0,0,0.4); }
 @media (max-width: 480px) {
   .doc__text { font-size: 1.375rem; line-height: 1.7; max-width: 30ch; }
   .app__title { font-size: 1.0625rem; }
-  .chips { gap: 8px; }
-  .chip { font-size: 1rem; min-height: 50px; }
-  .btn { font-size: 1.0625rem; min-height: 52px; }
+  .chips { gap: 7px; }
+  .chip { font-size: 0.95rem; min-height: 44px; padding: 8px 13px; }
+  .btn { font-size: 1.0625rem; min-height: 50px; }
 }
 
 @media (max-width: 360px) {
   .doc__text { font-size: 1.25rem; max-width: 26ch; }
+  .chip { min-height: 42px; padding: 7px 11px; font-size: 0.9rem; }
+  .chips { gap: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

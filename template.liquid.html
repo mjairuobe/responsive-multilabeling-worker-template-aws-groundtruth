@@ -121,9 +121,10 @@
 
   /* ---------- Document text (the only part that scrolls) ---------- */
   .doc {
+    flex: 1 1 auto;              /* the text region absorbs free space and scrolls ... */
+    min-height: 0;              /* ... so that ALL labels + footer stay visible without page scroll */
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    max-height: 440px;           /* bounded scroll for long texts; JS scales this to ~55% of the viewport when one is available */
     padding: 14px 16px;
   }
   .doc__card {
@@ -147,8 +148,7 @@
 
   /* ---------- Labels (chips) ---------- */
   .labels {
-    overflow: auto;              /* fallback scroll only if there are very many labels */
-    max-height: 240px;
+    flex: 0 0 auto;              /* show ALL labels at once - no inner scrolling */
     padding: 4px 14px 10px;
     border-top: 1px solid var(--border);
   }
@@ -296,15 +296,17 @@
     .doc__text { font-size: 1.375rem; line-height: 1.7; max-width: 30ch; }   /* ~22px */
     .app__title { font-size: 1.0625rem; }
     .app__subtitle { font-size: 0.85rem; }
-    .chips { gap: 8px; }
-    .chip { font-size: 1rem; min-height: 50px; }       /* ~16px, large tap target */
-    .btn { font-size: 1.0625rem; min-height: 52px; }
-    .labels__legend { font-size: 0.85rem; }
+    .chips { gap: 7px; }
+    .chip { font-size: 0.95rem; min-height: 44px; padding: 8px 13px; }  /* compact but tappable so all labels fit */
+    .btn { font-size: 1.0625rem; min-height: 50px; }
+    .labels__legend { font-size: 0.85rem; margin: 6px 2px; }
   }
 
-  /* Very small phones */
+  /* Very small phones: shrink chips a touch more so all labels + footer still fit */
   @media (max-width: 360px) {
     .doc__text { font-size: 1.25rem; max-width: 26ch; }
+    .chip { min-height: 42px; padding: 7px 11px; font-size: 0.9rem; }
+    .chips { gap: 6px; }
   }
 
   /* Respect users who prefer reduced motion */
@@ -614,17 +616,17 @@
     if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open");
   });
 
-  // Textbereich proportional zum verfügbaren Viewport machen, wenn eine sinnvolle
-  // Höhe vorhanden ist (Standalone bzw. wenn GT einen echten Viewport liefert).
-  // Kollabiert nie: ohne echten Viewport bleibt der CSS-Wert (max-height) erhalten.
-  function sizeDoc() {
-    var doc = document.getElementById("docRegion");
-    if (!doc) return;
+  // Fill the viewport so the flex column can keep ALL labels + footer visible
+  // while only the text region (.doc) scrolls. Falls back to natural document
+  // flow when there is no sane viewport height, so it never collapses.
+  function sizeApp() {
+    var app = document.querySelector(".app");
+    if (!app) return;
     var vh = window.innerHeight || 0;
-    if (vh > 420) doc.style.maxHeight = Math.round(vh * 0.55) + "px";
+    if (vh > 360) app.style.height = vh + "px";
   }
-  window.addEventListener("resize", sizeDoc);
-  sizeDoc();
+  window.addEventListener("resize", sizeApp);
+  sizeApp();
 
   // Make a missing dataset obvious (text neither in taskObject nor source).
   var dt = document.getElementById("docText");
